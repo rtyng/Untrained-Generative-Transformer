@@ -1,26 +1,25 @@
-The SelfAttention class is defined as a subclass of nn.Module.
+Self Attention Line-by-line breakdown by ChatGPT 3.5
 
-The __init__ method initializes the class and takes d_model (dimension of the model) and num_heads (number of attention heads) as input parameters.
+__init__() explanation
+This code defines a class called SelfAttention that inherits from the nn.Module class. It is used to implement the self-attention mechanism. Let's go through the initialization:
+    
+    The __init__ method initializes the class instance with two attributes: num_heads and d_model. num_heads represents the number of attention heads, and d_model represents the dimensionality of the input and output vectors.
 
-The num_heads and d_model values are assigned to instance variables for later use.
-self.query, self.key, and self.value are linear layers used for projecting the input tensor into query, key, and value tensors, respectively. They are defined using nn.Linear, with the input and output dimensions set as d_model.
+        It also initializes three linear layers: query, key, and value. These layers project the input into query, key, and value vectors for each attention head. Each linear layer takes an input of dimension d_model and produces an output of dimension d_model.
 
-The self.scale variable is set to 1.0 / math.sqrt(d_model). It is used to scale the dot product of the query and key tensors in order to prevent the gradients from vanishing or exploding during the training process.
+                ##What is a linear layer exactly?
+                    Also known as a fully connected layer or a dense layer, it is a fundamental component of a nueral network
+                    
+                    Its function is to perform a linear transformation on the input data
 
-The forward method defines the forward pass of the SelfAttention module, taking the input tensor x as a parameter.
-The batch_size variable is assigned the size of the first dimension of x, which represents the batch size.
-The input tensor x is projected into query, key, and value tensors by passing it through the linear layers self.query, self.key, and self.value, respectively. This is done by calling the layers as functions with x as the input.
+                    output = input * weight^T + bias
 
-The query, key, and value tensors are reshaped to enable multi-head attention. This is achieved by using the view method to reshape the tensors. The reshaping is done to separate the heads of attention and enable parallel processing.
+                    In straightforward math terms, a linear layer outputs a dot product of our input data with a transposed weight matrix (those weights are learned through backpropagation and gradient descent) with a bias term added on for a small offset.
 
-The attention scores are computed by taking the dot product of the query tensor q and the key tensor k, transposed along the last two dimensions using transpose(1, 2) to perform matrix multiplication. This is done using torch.matmul.
-The computed scores are then scaled by the self.scale value, which helps stabilize the gradients during training.
+                ## what is a linear layer in this context? 
+                    The linear layers above are used for the model to learn about what the words mean based on their context, the context being the positional information of every other word, along with additional data
 
-The attention scores are passed through a softmax function using F.softmax to obtain attention probabilities. The dim=-1 argument specifies to apply the softmax operation along the last dimension.
+                
 
-The attention probabilities (attn_probs) are multiplied element-wise with the value tensor v using torch.matmul to apply attention weights to the value vectors.
-
-The resulting attended output tensor (attn_output) is reshaped using view to combine the multi-head outputs back into a single tensor.
-Finally, the reshaped tensor is returned as the output of the forward method.
-
+            The scale attribute is set to 1.0 / math.sqrt(d_model). It is a scaling factor used in the attention calculation.
 

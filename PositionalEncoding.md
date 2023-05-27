@@ -1,55 +1,34 @@
 ###Below is a line by line analysis provided by GPT 3.5 
 
-###imports and __init__() method of PositionalEncoding
+#__init__() description
 
-The code imports necessary packages and modules.
+This code defines a class called PositionalEncoding, which inherits from the nn.Module class, indicating that it is a PyTorch module. The purpose of this class is to generate positional encodings for sequences of a given d_model dimension.
 
-PositionalEncoding 
-    is defined as a subclass of nn.Module, which is a base class for all neural network modules in PyTorch. It represents the positional encoding component of the generative transformer model.
+The __init__ method is the constructor of the class. It initializes the class instance with two attributes: dropout and positional_encoding. 
+    The dropout attribute is an instance of nn.Dropout with a dropout probability of 0.1 (i.e., 10%). 
+        The positional_encoding attribute is initialized by calling the generate_encoding method, passing the d_model and max_len as arguments.
 
-In the __init__ method 
-    the class is initialized. It takes two parameters: d_model (dimensionality of the model) and max_len (maximum length of input sequences).
+#generate_encoding()
 
-super(PositionalEncoding, self).__init__() 
-    calls the superclass's initialization to properly set up the module.
+The generate_encoding method creates the positional encoding for the given d_model and max_len values. Let's break it down:
 
-self.dropout = nn.Dropout(p=0.1) 
-    creates a dropout layer with a dropout probability of 0.1.
+It first initializes an encoding tensor of shape (max_len, d_model) filled with zeros.
 
-self.positional_encoding = self.generate_encoding(d_model, max_len) 
-    calls the generate_encoding method to generate the positional encoding matrix and assigns it to the positional_encoding attribute.
+    It creates a position tensor using torch.arange(0, max_len, dtype=torch.float). This tensor represents the position indices and has shape (max_len, 1).
 
-###generate_encoding(self, d_model, max_len)
+        It calculates a div_term tensor by taking the exponential of a range tensor multiplied by a factor. The range tensor is obtained using torch.arange(0, d_model, 2).float(), representing [0, 2, 4, ..., d_model-2]. The factor used is (-math.log(10000.0) / d_model). The purpose of this calculation will become clear in a moment.
 
-The generate_encoding method generates the positional encoding matrix based on the provided d_model and max_len values.
+            The encoding tensor is modified in two steps:
 
-encoding = torch.zeros(max_len, d_model) 
-    creates a tensor of size (max_len, d_model) filled with zeros, which will hold the positional encoding values.
+            encoding[:, 0::2] = torch.sin(position * div_term): This assigns the sine values of position * div_term to every other column starting from the first column 
+            (0-indexed).
 
-position = torch.arange(0, max_len, dtype=torch.float).unsqueeze(1) 
-    creates a tensor of sequential numbers from 0 to max_len - 1. It represents the positions of the elements in the input sequence. unsqueeze(1) adds an extra dimension to make it of size (max_len, 1).
+            encoding[:, 1::2] = torch.cos(position * div_term): This assigns the cosine values of position * div_term to every other column starting from the second column.
 
-div_term = torch.exp(torch.arange(0, d_model, 2).float() * (-math.log(10000.0) / d_model)) 
-    creates a tensor containing the exponential values used in the positional encoding formula. The formula scales the positions and dimensions to ensure the encoding captures both relative and absolute positions effectively.
+            It reshapes the encoding tensor by unsqueezing the first dimension and transposing the dimensions using encoding.unsqueeze(0).transpose(0, 1). The resulting shape will be (max_len, 1, d_model), representing (sequence_length, batch_size, d_model).
 
-encoding[:, 0::2] = torch.sin(position * div_term) 
-    calculates the sine values of the even-indexed dimensions of encoding using the positional encoding formula.
+Finally, it returns the encoded tensor.
 
-encoding[:, 1::2] = torch.cos(position * div_term) 
-    calculates the cosine values of the odd-indexed dimensions of encoding using the positional encoding formula.
+The forward pass method is where the encoded information is passed onto the self attention mechanism
 
-encoding = encoding.unsqueeze(0).transpose(0, 1) 
-    adds an extra dimension at the beginning of the tensor and transposes it, resulting in a tensor of size (max_len, 1, d_model). This shape is compatible with the input expected by the transformer model.
 
-Finally 
-    the generated positional encoding is returned as the output of the generate_encoding method.
-
-###forward(self, x)
-
-The forward method defines the forward pass of the PositionalEncoding module.
-
-x = x + self.positional_encoding[:x.size(0), :] 
-    adds the positional encoding to the input tensor x. self.positional_encoding is sliced to match the length of x by using x.size(0) to retrieve the number of elements in the first dimension of x.
-
-return self.dropout(x) 
-    applies dropout to the sum of x and the positional encoding and returns the result.
