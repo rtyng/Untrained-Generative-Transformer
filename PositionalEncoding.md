@@ -1,5 +1,12 @@
 ###Below is a line by line analysis provided by GPT 3.5 
 
+class PositionalEncoding(nn.Module):
+    def __init__(self, d_model, max_len=1000):
+        super(PositionalEncoding, self).__init__()
+        self.dropout = nn.Dropout(p=0.1)  # probability of dropout
+        self.positional_encoding = self.generate_encoding(d_model, max_len)
+
+
 #__init__() description
 
 This code defines a class called PositionalEncoding, which inherits from the nn.Module class, indicating that it is a PyTorch module. The purpose of this class is to generate positional encodings for sequences of a given d_model dimension.
@@ -7,6 +14,16 @@ This code defines a class called PositionalEncoding, which inherits from the nn.
 The __init__ method is the constructor of the class. It initializes the class instance with two attributes: dropout and positional_encoding. 
     The dropout attribute is an instance of nn.Dropout with a dropout probability of 0.1 (i.e., 10%). 
         The positional_encoding attribute is initialized by calling the generate_encoding method, passing the d_model and max_len as arguments.
+
+def generate_encoding(self, d_model, max_len):
+    encoding = torch.zeros(max_len, d_model)
+    position = torch.arange(0, max_len, dtype=torch.float).unsqueeze(1)
+    div_term = torch.exp(torch.arange(0, d_model, 2).float() * (-math.log(10000.0) / d_model))
+    encoding[:, 0::2] = torch.sin(position * div_term)
+    encoding[:, 1::2] = torch.cos(position * div_term)
+    encoding = encoding.unsqueeze(0).transpose(0, 1)
+    return encoding
+
 
 #generate_encoding()
 
@@ -28,6 +45,11 @@ It first initializes an encoding tensor of shape (max_len, d_model) filled with 
             It reshapes the encoding tensor by unsqueezing the first dimension and transposing the dimensions using encoding.unsqueeze(0).transpose(0, 1). The resulting shape will be (max_len, 1, d_model), representing (sequence_length, batch_size, d_model).
 
 Finally, it returns the encoded tensor.
+
+def forward(self, x):
+    x = x + self.positional_encoding[:x.size(0), :]
+    return self.dropout(x)
+
 
 The forward pass method is where the encoded information is passed onto the self attention mechanism
 
