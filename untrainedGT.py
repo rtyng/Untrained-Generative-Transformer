@@ -15,7 +15,24 @@ import time
 
 
 class PositionalEncoding(nn.Module):
+    """
+     Adds information about the absolute or relative positions of tokens in each sequence
+    
+    Transformer models do not have an inherent knowledge of token positions like an RNN, so we need to provide that explicitly
+    Args:
+        nn (_type_): _description_
+    """
     def __init__(self, d_model, max_len=1000):
+        """
+        Create 10% dropout layer
+            Purpose is to avoid overfitting by randomly selecting neurons to ignore during training
+        Generate posiional encoding
+
+        
+        Args:
+            d_model (int): model dimension or # of features in input (typically called the embedding size)
+            max_len (int, optional): max length of sequence that model can handle. Defaults to 1000.
+        """
         super(PositionalEncoding, self).__init__()
         self.dropout = nn.Dropout(p=0.1) #probability of dropout
         self.positional_encoding = self.generate_encoding(d_model, max_len)
