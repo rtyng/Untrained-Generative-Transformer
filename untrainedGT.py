@@ -1,6 +1,5 @@
-#This script holds an untrained generative transformer model
+# Imports
 
-#These imports are specific to the model and to vizualizing its output
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -9,62 +8,107 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
 from sklearn.manifold import TSNE
-
-#These imports are for extra features like measuring the time it takes for the script to run
 import time 
 
 
 class PositionalEncoding(nn.Module):
     """
-     Adds information about the absolute or relative positions of tokens in each sequence
+    Adds information about the absolute or relative positions of tokens in a sequence
     
     Transformer models do not have an inherent knowledge of token positions like an RNN, so we need to provide that explicitly
     Args:
-        nn (_type_): _description_
+        nn (Pytorch .nn module): Activates our positional encoding class 
     """
     def __init__(self, d_model, max_len=1000):
         """
-        Create 10% dropout layer
-            Purpose is to avoid overfitting by randomly selecting neurons to ignore during training
-        Generate posiional encoding
-
+        Initialization of parent class 
         
         Args:
             d_model (int): model dimension or # of features in input (typically called the embedding size)
             max_len (int, optional): max length of sequence that model can handle. Defaults to 1000.
         """
+        
         super(PositionalEncoding, self).__init__()
-        self.dropout = nn.Dropout(p=0.1) #probability of dropout
+        self.dropout = nn.Dropout(p=0.1)
         self.positional_encoding = self.generate_encoding(d_model, max_len)
 
     def generate_encoding(self, d_model, max_len):
+        """
+        Args:
+            d_model (int): embedding size or # of input features
+            max_len (int): max length of sequence model handles
+
+        Returns:
+            encoding : a tensor representing positional information
+        """
+        # initialize an encoding tensor, a position tnesor, and a scaling tensor
+        
         encoding = torch.zeros(max_len, d_model)
         position = torch.arange(0, max_len, dtype=torch.float).unsqueeze(1)
         div_term = torch.exp(torch.arange(0, d_model, 2).float() * (-math.log(10000.0) / d_model))
-        encoding[:, 0::2] = torch.sin(position * div_term)
+        
+        # Apply sine and cosine functions to generate positional encoding values for scaling the positional encoding
+    
+        encoding[:, 0::2] = torch.sin(position * div_term) 
         encoding[:, 1::2] = torch.cos(position * div_term)
+        
+        # Reshape and Transpose encoding to match expected shape for positional encodings
+        
         encoding = encoding.unsqueeze(0).transpose(0, 1)
         return encoding
 
     def forward(self, x):
+        """
+        Takes input tensor x and applies positional encoding 
+
+        Args:
+            x (tensor): input tensor
+
+        Returns:
+            self.dropout(x) : randomly "zeroed-out" (element-wise) modified input tensor x
+        """
         x = x + self.positional_encoding[:x.size(0), :]
         return self.dropout(x)
 
 class SelfAttention(nn.Module):
     def __init__(self, d_model, num_heads):
+        """
+        initialization
+
+        Args:
+            d_model (int): # of input features
+            num_heads (int): # of attention heads
+        """
+        
+        # initialize parent class, attributes
         super(SelfAttention, self).__init__()
         self.num_heads = num_heads
         self.d_model = d_model
 
+        # Define Linear layers for query, key, value tensors
+        # they are used to project input into desired dimensons for q,k, and v
+        
         self.query = nn.Linear(d_model, d_model)
         self.key = nn.Linear(d_model, d_model)
         self.value = nn.Linear(d_model, d_model)
+        
+        # Scaling attention scores DURING computation to avoid vanishing or exploding gradients
         self.scale = 1.0 / math.sqrt(d_model)
 
     def forward(self, x):
+        """
+        Forward pass through the self-attention mechanism
+
+        Args:
+            x (tensor): input tensor
+
+        Returns:
+            attn_output: multi-head self-attention outputs
+        """
+        
         batch_size = x.size(0)
 
-        # Project inputs to query, key, and value
+        # Project inputs to query, key, and value using previously defined Linear Layers
         q = self.query(x)
         k = self.key(x)
         v = self.value(x)
@@ -90,6 +134,13 @@ class SelfAttention(nn.Module):
 
 class FeedForward(nn.Module):
     def __init__(self, d_model, d_ff):
+        """
+        
+
+        Args:
+            d_model (int): # of input features
+            d_ff (int): size of feed-forward layer
+        """
         super(FeedForward, self).__init__()
         self.linear1 = nn.Linear(d_model, d_ff)
         self.linear2 = nn.Linear(d_ff, d_model)
