@@ -86,6 +86,8 @@ class SelfAttention(nn.Module):
         self.d_model = d_model
 
         # Define Linear layers for query, key, value tensors
+        # Linear layers in this context are when there is a matrix multiplication and addition applied to the input tensor
+        
         # they are used to project input into desired dimensons for q,k, and v
         
         self.query = nn.Linear(d_model, d_model)
@@ -109,12 +111,24 @@ class SelfAttention(nn.Module):
         batch_size = x.size(0)
 
         # Project inputs to query, key, and value using previously defined Linear Layers
+        # nn.Linear automatically initiliazes a weight matrix for the matrix multiplication
+        # bias vector added element-wise to resulting tensor
         q = self.query(x)
         k = self.key(x)
         v = self.value(x)
 
-        # Reshape tensors to enable multi-head attention
+        # Reshape step splits d_model dimension into equal-sized chunks for each attention head
+        # (batch_size, sequence_length, d_model) -> shape of input tensors
+            # batch_size -> number of input sequences in a batch
+            # sequence_length -> length of each input sequence 
+            # d_model -> number of features in input or model dimension
+        
+        # example
+            # q shape before reshape: (4,6,12)
+            # q shape after reshape: (4*3. 6. 12 // 3) = (12, 6, 4)
         q = q.view(batch_size * self.num_heads, -1, self.d_model // self.num_heads)
+        # view() is used to reshape tensors in PyTorch 
+            # -1 allows Pytorch to auto determine size of middle dimension, based on other dimensions
         k = k.view(batch_size * self.num_heads, -1, self.d_model // self.num_heads)
         v = v.view(batch_size * self.num_heads, -1, self.d_model // self.num_heads)
 
@@ -135,7 +149,7 @@ class SelfAttention(nn.Module):
 class FeedForward(nn.Module):
     def __init__(self, d_model, d_ff):
         """
-        
+        Apply ReLU and Linear transformation to input tensor x 
 
         Args:
             d_model (int): # of input features
@@ -151,7 +165,16 @@ class FeedForward(nn.Module):
         return x
 
 class TransformerBlock(nn.Module):
+    """
+    Represents a single block of the transformer model
+
+    Args:
+        nn.Module (torch module)
+    """
     def __init__(self, d_model, num_heads, d_ff):
+        """
+        This constructor class allows the model to do work within each layer
+        """
         super(TransformerBlock, self).__init__()
         self.self_attention = SelfAttention(d_model, num_heads)
         self.norm1 = nn.LayerNorm(d_model)
